@@ -179,7 +179,7 @@ export default function StudentPage() {
             <p style={{ fontSize: "12px", fontWeight: "700", color: t.subtext, letterSpacing: "0.7px", textTransform: "uppercase", marginBottom: "10px" }}>
               🚌 Track by Bus Number
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px" }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
               {allBuses
                 .filter(b => b.collegeNumber)
                 .sort((a, b) => a.collegeNumber - b.collegeNumber)
@@ -333,4 +333,5 @@ export default function StudentPage() {
     </div>
   );
 }
+
 

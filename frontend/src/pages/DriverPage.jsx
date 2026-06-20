@@ -89,10 +89,27 @@ export default function DriverPage() {
   const [busNumber, setBusNumber]   = useState(driverSession?.busNumber  || "");
   const [route, setRoute]           = useState(driverSession?.route      || "");
 
-  // Keep routeRef in sync with session route
+  // Keep routeRef and route state in sync with session
   useEffect(() => {
-    if (driverSession?.route) routeRef.current = driverSession.route;
-  }, [driverSession?.route]);
+    if (driverSession?.route) {
+      routeRef.current = driverSession.route;
+      setRoute(driverSession.route);
+      setDriverName(driverSession.driverName || "");
+      setBusNumber(driverSession.busNumber || "");
+    }
+  }, [driverSession?.busNumber]);
+
+  // Load route stops — use session route directly, not state (avoids stale closure)
+  useEffect(() => {
+    const routeName = driverSession?.route || route;
+    if (!routeName) { setRouteStops([]); return; }
+    axios.get(`${API}/student/route-stops/${encodeURIComponent(routeName)}`)
+      .then(r => {
+        const stops = r.data?.stops || [];
+        setRouteStops(stops);
+      })
+      .catch(() => setRouteStops([]));
+  }, [driverSession?.route, route]); // watch both
 
   const [tracking, setTracking]       = useState(false);
   const [watchId, setWatchId]         = useState(null);
@@ -115,7 +132,7 @@ export default function DriverPage() {
 
   const [routes, setRoutes] = useState([]);
   const [buses, setBuses]   = useState([]);
-  const [activeTrips, setActiveTrips] = useState([]); // buses already on a trip
+  const [activeTrips, setActiveTrips] = useState([]);
 
   const routeRef    = useRef(route);
   const manualRef   = useRef(manualStop);
@@ -128,7 +145,6 @@ export default function DriverPage() {
     axios.get(`${API}/admin/routes`).then(r => setRoutes(r.data)).catch(() => {});
     axios.get(`${API}/admin/buses`).then(r  => setBuses(r.data)).catch(() => {});
     fetchActiveTrips();
-    // Refresh active trips every 10s so the list stays current
     const iv = setInterval(fetchActiveTrips, 10000);
     return () => clearInterval(iv);
   }, []);
@@ -140,16 +156,7 @@ export default function DriverPage() {
     } catch { /* silent */ }
   };
 
-  // Check if a bus is currently on an active trip by another driver
   const getTripInfo = (busNum) => activeTrips.find(t => t.busNumber === busNum);
-
-  // Load route stops when route changes
-  useEffect(() => {
-    if (!route) { setRouteStops([]); return; }
-    axios.get(`${API}/student/route-stops/${encodeURIComponent(route)}`)
-      .then(r => setRouteStops(r.data?.stops || []))
-      .catch(() => setRouteStops([]));
-  }, [route]);
 
   const handleBusChange = (val) => {
     // Block selecting a bus that is already on an active trip
@@ -465,18 +472,18 @@ export default function DriverPage() {
                 <div style={{ fontSize: "11px", color: "#666", textTransform: "uppercase", fontWeight: "700", letterSpacing: "0.5px", marginBottom: "6px" }}>
                   🔒 Your Assigned Bus (from login)
                 </div>
-                <div style={{ display: "flex", gap: "16px" }}>
-                  <div>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <div style={{ minWidth: "60px" }}>
                     <div style={{ fontSize: "11px", color: "#888" }}>BUS</div>
                     <div style={{ fontWeight: "800", fontSize: "16px", color: "#1565c0" }}>{driverSession.busNumber}</div>
                   </div>
-                  <div>
+                  <div style={{ minWidth: "80px" }}>
                     <div style={{ fontSize: "11px", color: "#888" }}>DRIVER</div>
-                    <div style={{ fontWeight: "700", fontSize: "14px", color: "#333" }}>{driverSession.driverName}</div>
+                    <div style={{ fontWeight: "700", fontSize: "13px", color: "#333" }}>{driverSession.driverName}</div>
                   </div>
-                  <div>
+                  <div style={{ flex: 1, minWidth: "100px" }}>
                     <div style={{ fontSize: "11px", color: "#888" }}>ROUTE</div>
-                    <div style={{ fontWeight: "600", fontSize: "13px", color: "#555" }}>{driverSession.route}</div>
+                    <div style={{ fontWeight: "600", fontSize: "12px", color: "#555", wordBreak: "break-word" }}>{driverSession.route}</div>
                   </div>
                 </div>
               </div>
@@ -692,12 +699,12 @@ export default function DriverPage() {
 
             {/* ── MAP TAB ── */}
             {activeTab === "map" && (
-              <div style={{ borderRadius: "12px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.12)" }}>
+              <div className="driver-map-wrap" style={{ borderRadius: "12px", overflow: "hidden", boxShadow: "0 2px 10px rgba(0,0,0,0.12)" }}>
                 {liveData.latitude ? (
                   <MapContainer
                     center={[liveData.latitude, liveData.longitude]}
                     zoom={15}
-                    style={{ height: "420px", width: "100%" }}
+                    style={{ height: "100%", width: "100%" }}
                   >
                     <TileLayer
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

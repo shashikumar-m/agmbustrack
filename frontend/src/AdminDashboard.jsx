@@ -233,6 +233,12 @@ export default function AdminDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: t.bg, fontFamily: 'sans-serif', transition: 'background 0.3s' }}>
+      <style>{`
+        .admin-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 640px) { .admin-2col { grid-template-columns: 1fr; } }
+        .bus-num-grid-admin { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        @media (max-width: 360px) { .bus-num-grid-admin { grid-template-columns: repeat(4, 1fr); } }
+      `}</style>
 
       {/* Header */}
       <div style={{ background: '#6a1b9a', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
@@ -245,7 +251,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs */}
-      <div style={{ background: t.card, borderBottom: `1px solid ${t.border}`, display: 'flex', padding: '0 16px', overflowX: 'auto' }}>
+      <div className="admin-tabs-bar" style={{ background: t.card, borderBottom: `1px solid ${t.border}`, display: 'flex', padding: '0 8px' }}>
         {tabs.map(tab => (
           <button key={tab.key} onClick={() => setActiveTab(tab.key)}
             style={{
@@ -268,11 +274,11 @@ export default function AdminDashboard() {
       {/* ═══ LIVE MAP TAB ═══ */}
       {activeTab === 'livemap' && <LiveMapPage />}
 
-      <div style={{ padding: '16px', maxWidth: '960px', margin: '0 auto' }}>
+      <div style={{ padding: '12px 10px', maxWidth: '100%', margin: '0 auto' }}>
 
         {/* ═══════════ STOPS TAB ═══════════ */}
         {activeTab === 'stops' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className='admin-2col'>
 
             {/* Add stop form */}
             <div style={card}>
@@ -508,7 +514,7 @@ export default function AdminDashboard() {
 
         {/* ═══════════ ROUTES TAB ═══════════ */}
         {activeTab === 'routes' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className='admin-2col'>
             <div style={card}>
               <p style={cardHead}>Create Route</p>
               <form onSubmit={handleCreateRoute} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -583,7 +589,7 @@ export default function AdminDashboard() {
 
         {/* ═══════════ BUSES TAB ═══════════ */}
         {activeTab === 'buses' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className='admin-2col'>
 
             {/* Add Bus Form */}
             <div style={card}>
@@ -595,7 +601,7 @@ export default function AdminDashboard() {
                   <label style={labelSt}>College Bus Number (shown to students)</label>
 
                   {/* Quick-pick grid 1–20 */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', marginTop: '6px' }}>
+                  <div style={{ className: 'bus-num-grid-admin', style: { marginTop: '6px' } }}>
                     {Array.from({ length: 20 }, (_, i) => i + 1).map(n => {
                       const taken = buses.some(b => b.collegeNumber === n);
                       return (
@@ -1102,4 +1108,11 @@ function GoogleMapPicker({ initialLat, initialLng, stopName, onPick, onClose }) 
     </div>
   );
 }
+
+
+
+
+
+
+
 

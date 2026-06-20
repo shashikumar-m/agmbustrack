@@ -151,7 +151,8 @@ function BusCard({ bus, from, to, t, dark, onClick }) {
             <span style={{ fontWeight: "700", fontSize: "13px", color: eta.etaMins <= 5 ? "#e65100" : "#2e7d32" }}>
               ETA to {to}: ~{eta.etaMins} min
             </span>
-            <span style={{ fontSize: "11px", color: t.subtext, marginLeft: "6px" }}>
+            <br />
+            <span style={{ fontSize: "11px", color: t.subtext }}>
               ({eta.stopsAway} stop{eta.stopsAway !== 1 ? "s" : ""} away · {eta.distKm} km)
             </span>
           </div>

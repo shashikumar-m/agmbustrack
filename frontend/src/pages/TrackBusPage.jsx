@@ -61,9 +61,47 @@ export default function TrackBusPage() {
 
   useEffect(() => {
     fetchBus();
-    const interval = setInterval(fetchBus, 5000);
+    const interval = setInterval(async () => {
+      // Stop polling once trip has ended
+      const res = await axios.get(`${API}/student/live-bus/${busNumber}`).catch(() => null);
+      if (!res) return;
+      const data = res.data;
+      setBus(data);
+      checkAlarm(data);
+      handleNotifications(data);
+      if (data?.route && routeFetchedFor.current !== data.route) {
+        routeFetchedFor.current = data.route;
+        fetchRoute(data.route);
+      }
+      setLoading(false);
+      // Stop polling if trip ended
+      if (data?.tripActive === false) clearInterval(interval);
+    }, 5000);
     return () => clearInterval(interval);
   }, [busNumber]);
+
+  const handleNotifications = (data) => {
+    if (!data || !routeDetails) return;
+    const stops = routeDetails.stops || [];
+    const currentIdx = stops.findIndex(s => s.name === data.currentStop);
+    const twoAheadStop = stops[currentIdx + 2]?.name;
+    if (twoAheadStop && !notifiedStops.current.has(data.currentStop)) {
+      notifiedStops.current.add(data.currentStop);
+      notify(`🚌 Bus approaching`,
+        `${busNumber} is at ${data.currentStop} — 2 stops away from ${twoAheadStop}`,
+        { icon: "🚌", color: "#1565c0", tag: `approach-${busNumber}` });
+    }
+    if (prevStatus.current && prevStatus.current !== data.busStatus) {
+      const statusMsg = {
+        delayed:   { title: "🟡 Bus Running Late", body: `${busNumber} is running behind schedule`, color: "#f57c00" },
+        bus_full:  { title: "🔴 Bus is Full",       body: `${busNumber} is full — wait for next bus`, color: "#c62828" },
+        breakdown: { title: "⚠️ Bus Breakdown",     body: `${busNumber} has a breakdown.`, color: "#b71c1c" },
+        on_time:   { title: "🟢 Bus Back on Track", body: `${busNumber} is now running on time`, color: "#2e7d32" },
+      }[data.busStatus];
+      if (statusMsg) notify(statusMsg.title, statusMsg.body, { icon: statusMsg.title.split(" ")[0], color: statusMsg.color, tag: `status-${busNumber}` });
+    }
+    prevStatus.current = data.busStatus;
+  };
 
   const fetchBus = async () => {
     try {
@@ -71,39 +109,7 @@ export default function TrackBusPage() {
       const data = res.data;
       setBus(data);
       checkAlarm(data);
-
-      // ── Notification triggers ──
-      if (data && routeDetails) {
-        const stops = routeDetails.stops || [];
-        const currentIdx = stops.findIndex(s => s.name === data.currentStop);
-
-        // Alert when bus is 2 stops away from last known stop in page URL
-        // (we use the stop at currentIdx+2 as a proxy for "approaching")
-        const twoAheadStop = stops[currentIdx + 2]?.name;
-        if (twoAheadStop && !notifiedStops.current.has(data.currentStop)) {
-          notifiedStops.current.add(data.currentStop);
-          notify(
-            `🚌 Bus approaching`,
-            `${busNumber} is at ${data.currentStop} — 2 stops away from ${twoAheadStop}`,
-            { icon: "🚌", color: "#1565c0", tag: `approach-${busNumber}` }
-          );
-        }
-
-        // Alert on status change
-        if (prevStatus.current && prevStatus.current !== data.busStatus) {
-          const statusMsg = {
-            delayed:   { title: "🟡 Bus Running Late", body: `${busNumber} is running behind schedule`, color: "#f57c00" },
-            bus_full:  { title: "🔴 Bus is Full",       body: `${busNumber} is full — wait for next bus`, color: "#c62828" },
-            breakdown: { title: "⚠️ Bus Breakdown",     body: `${busNumber} has a breakdown. Driver sent SOS.`, color: "#b71c1c" },
-            on_time:   { title: "🟢 Bus Back on Track", body: `${busNumber} is now running on time`, color: "#2e7d32" },
-          }[data.busStatus];
-          if (statusMsg) {
-            notify(statusMsg.title, statusMsg.body, { icon: statusMsg.title.split(" ")[0], color: statusMsg.color, tag: `status-${busNumber}` });
-          }
-        }
-        prevStatus.current = data.busStatus;
-      }
-
+      handleNotifications(data);
       if (data?.route && routeFetchedFor.current !== data.route) {
         routeFetchedFor.current = data.route;
         fetchRoute(data.route);
@@ -146,8 +152,9 @@ export default function TrackBusPage() {
   };
 
   const mins = bus ? Math.floor((Date.now() - new Date(bus.lastUpdated)) / 60000) : null;
-  const isLive = mins !== null && mins < 2;
-  const tripEnded = bus && bus.tripActive === false;
+  // tripActive===false means driver ended trip — never show as LIVE even if recently updated
+  const tripEnded = bus?.tripActive === false;
+  const isLive = !tripEnded && mins !== null && mins < 2;
 
   // Always-fresh Google Maps URL using latest bus GPS coords
   const googleMapsUrl = bus?.latitude && bus?.longitude
@@ -199,7 +206,7 @@ export default function TrackBusPage() {
         </div>
 
         {/* Action pills */}
-        <div style={{ display: "flex", gap: "8px", padding: "0 14px 12px", overflowX: "auto" }}>
+        <div className="pills-scroll" style={{ gap: "8px", padding: "0 14px 12px" }}>
           {/* Today — shows current date, tapping scrolls to current stop */}
           <ActionPill
             label={`📅 ${today}`}
@@ -307,11 +314,11 @@ export default function TrackBusPage() {
         <>
           {/* ── Map Tab (full screen below header) ── */}
           {activeTab === "map" && bus.latitude && bus.longitude && (
-            <div style={{ flex: 1, minHeight: "calc(100vh - 120px)" }}>
+            <div className="track-map-wrap" style={{ flex: 1 }}>
               <MapContainer
                 center={[bus.latitude, bus.longitude]}
                 zoom={14}
-                style={{ height: "calc(100vh - 120px)", width: "100%" }}
+                style={{ height: "100%", width: "100%" }}
               >
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -365,9 +372,7 @@ export default function TrackBusPage() {
             <div style={{ flex: 1, background: "#fff" }}>
 
               {/* Column headers — exactly like the train app */}
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "72px 1fr 72px",
+              <div className="timeline-row" style={{
                 background: "#f5f7fa",
                 borderBottom: "1px solid #e8e8e8",
                 padding: "10px 14px",
@@ -576,16 +581,15 @@ function StopRow({ stop, idx, total, isPast, isCurrent, isFuture, arrTime, depTi
   return (
     <div
       id={isCurrent ? "current-stop-row" : undefined}
+      className="timeline-row"
       style={{
-      display: "grid",
-      gridTemplateColumns: "72px 1fr 72px",
-      background: rowBg,
-      borderBottom: idx === total - 1 ? "none" : "1px solid #f0f0f0",
-      minHeight: "80px",
-      position: "relative",
-    }}>
+        background: rowBg,
+        borderBottom: idx === total - 1 ? "none" : "1px solid #f0f0f0",
+        minHeight: "70px",
+        position: "relative",
+      }}>
       {/* Arrived column */}
-      <div style={{ padding: "14px 0 14px 14px", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
+      <div style={{ padding: "10px 0 10px 10px", display: "flex", flexDirection: "column", justifyContent: "flex-start" }}>
         {idx > 0 && (
           <>
             <span style={{ fontSize: "13px", fontWeight: "600", color: isFuture ? "#888" : "#1a1a2e" }}>{arrTime}</span>
@@ -672,7 +676,7 @@ function StopRow({ stop, idx, total, isPast, isCurrent, isFuture, arrTime, depTi
       </div>
 
       {/* Departed column */}
-      <div style={{ padding: "14px 14px 14px 0", display: "flex", flexDirection: "column", justifyContent: "flex-start", textAlign: "right" }}>
+      <div style={{ padding: "10px 10px 10px 0", display: "flex", flexDirection: "column", justifyContent: "flex-start", textAlign: "right" }}>
         {idx < total - 1 && (
           <span style={{ fontSize: "13px", fontWeight: "600", color: isFuture ? "#888" : "#1a1a2e" }}>{depTime}</span>
         )}
