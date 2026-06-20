@@ -37,12 +37,12 @@ function computeETA(bus, routeStops, targetStopName) {
   return { etaMins, stopsAway, distKm: distKm.toFixed(1) };
 }
 
-// Get a single live bus by bus number
+// Get a single live bus by bus number — includes trip state
 router.get("/live-bus/:busNumber", async (req, res) => {
   try {
     const bus = await LiveBus.findOne({ busNumber: req.params.busNumber });
     if (!bus) return res.status(404).json({ message: "Bus not found" });
-    res.json(bus);
+    res.json(bus);  // tripActive field tells frontend whether trip is ongoing
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -68,8 +68,15 @@ router.get("/search", async (req, res) => {
     });
 
     const results = await Promise.all(matchingRoutes.map(async route => {
-      const liveBuses = await LiveBus.find({ route: route.routeName });
-      // Attach ETA to each live bus
+      // Only show buses with an ACTIVE trip — tripActive:true OR updated within last 5 minutes
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const liveBuses = await LiveBus.find({
+        route: route.routeName,
+        $or: [
+          { tripActive: true },
+          { lastUpdated: { $gte: fiveMinAgo } }  // grace period for GPS gaps
+        ]
+      });
       const busesWithETA = liveBuses.map(bus => {
         const eta = computeETA(bus.toObject(), route.stops, to);
         return { ...bus.toObject(), eta };

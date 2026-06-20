@@ -164,7 +164,23 @@ router.post("/update-location", async (req, res) => {
     }
 
     await bus.save();
-    res.json({ success: true, currentStop, nextStop, busStatus: bus.busStatus });
+
+    // ── Auto-end trip when bus reaches the LAST stop on the route ──
+    let autoEnded = false;
+    if (currentStop && !nextStop) {
+      // nextStop is empty — bus is at or past the last stop
+      await LiveBus.findOneAndUpdate(
+        { busNumber },
+        { tripActive: false, speed: 0, lastUpdated: new Date() }
+      );
+      autoEnded = true;
+    }
+
+    res.json({
+      success: true, currentStop, nextStop,
+      busStatus: bus.busStatus,
+      tripEnded: autoEnded,   // frontend uses this to show "Trip completed" banner
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

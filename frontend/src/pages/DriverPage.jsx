@@ -211,6 +211,15 @@ export default function DriverPage() {
             setManualStop("");
           }
           setUpdateCount(c => c + 1);
+
+          // Auto-end: backend detected bus reached last stop
+          if (res.data.tripEnded) {
+            navigator.geolocation.clearWatch(id);
+            setTracking(false);
+            setError(""); 
+            // show a completion message via state
+            setLiveData(prev => ({ ...prev, tripCompleted: true }));
+          }
         } catch (err) {
           console.error(err);
         }
@@ -515,6 +524,29 @@ export default function DriverPage() {
         {/* ── Active Trip Panel ── */}
         {tracking && (
           <>
+            {/* Trip completed banner */}
+            {liveData.tripCompleted && (
+              <div style={{
+                background: "#e8f5e9", border: "2px solid #2e7d32",
+                borderRadius: "12px", padding: "16px",
+                marginBottom: "12px", textAlign: "center",
+              }}>
+                <div style={{ fontSize: "32px", marginBottom: "8px" }}>🏁</div>
+                <p style={{ fontWeight: "700", fontSize: "16px", color: "#2e7d32", margin: "0 0 6px" }}>
+                  Trip Completed!
+                </p>
+                <p style={{ fontSize: "13px", color: "#555", margin: "0 0 12px" }}>
+                  Bus has reached the final stop — trip ended automatically.
+                </p>
+                <button onClick={stopTrip} style={{
+                  padding: "10px 24px", background: "#2e7d32", color: "#fff",
+                  border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer",
+                }}>
+                  ✓ Done
+                </button>
+              </div>
+            )}
+
             {/* Trip summary strip */}
             <div style={{
               background: "#fff", borderRadius: "10px",

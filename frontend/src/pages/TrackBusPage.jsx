@@ -147,6 +147,7 @@ export default function TrackBusPage() {
 
   const mins = bus ? Math.floor((Date.now() - new Date(bus.lastUpdated)) / 60000) : null;
   const isLive = mins !== null && mins < 2;
+  const tripEnded = bus && bus.tripActive === false;
 
   // Always-fresh Google Maps URL using latest bus GPS coords
   const googleMapsUrl = bus?.latitude && bus?.longitude
@@ -380,7 +381,7 @@ export default function TrackBusPage() {
 
               {/* Status bar */}
               <div style={{
-                background: isLive ? "#e8f5e9" : "#fff8e1",
+                background: tripEnded ? "#f3e5f5" : isLive ? "#e8f5e9" : "#fff8e1",
                 padding: "10px 16px",
                 display: "flex",
                 alignItems: "center",
@@ -388,19 +389,29 @@ export default function TrackBusPage() {
                 borderBottom: "1px solid #e8e8e8",
                 flexWrap: "wrap",
               }}>
-                <span style={{
-                  background: isLive ? "#2e7d32" : "#f57c00",
-                  color: "#fff", padding: "3px 10px", borderRadius: "20px",
-                  fontSize: "12px", fontWeight: "700",
-                }}>
-                  {isLive ? "● LIVE" : `Last seen ${mins}m ago`}
-                </span>
+                {tripEnded ? (
+                  <span style={{
+                    background: "#6a1b9a", color: "#fff",
+                    padding: "3px 10px", borderRadius: "20px",
+                    fontSize: "12px", fontWeight: "700",
+                  }}>
+                    🏁 Trip Completed
+                  </span>
+                ) : (
+                  <span style={{
+                    background: isLive ? "#2e7d32" : "#f57c00",
+                    color: "#fff", padding: "3px 10px", borderRadius: "20px",
+                    fontSize: "12px", fontWeight: "700",
+                  }}>
+                    {isLive ? "● LIVE" : `Last seen ${mins}m ago`}
+                  </span>
+                )}
                 <span style={{ fontSize: "13px", color: "#555" }}>
                   Driver: <strong>{bus.driverName}</strong>
-                  {bus.speed > 0 && <span style={{ marginLeft: "8px" }}>· {Math.round(bus.speed)} km/h</span>}
+                  {!tripEnded && bus.speed > 0 && <span style={{ marginLeft: "8px" }}>· {Math.round(bus.speed)} km/h</span>}
                 </span>
                 {/* Bus status from driver */}
-                {bus.busStatus && bus.busStatus !== "on_time" && (
+                {!tripEnded && bus.busStatus && bus.busStatus !== "on_time" && (
                   <span style={{
                     marginLeft: "auto",
                     background: bus.busStatus === "bus_full" ? "#ffebee" : bus.busStatus === "delayed" ? "#fff8e1" : "#ffebee",
@@ -412,9 +423,47 @@ export default function TrackBusPage() {
                   </span>
                 )}
                 <span style={{ fontSize: "13px", color: "#aaa", marginLeft: "auto" }}>
-                  Auto-refresh 5s
+                  {tripEnded ? "No longer tracking" : "Auto-refresh 5s"}
                 </span>
               </div>
+
+              {/* Trip ended notice */}
+              {tripEnded && (
+                <div style={{
+                  background: "#f3e5f5",
+                  border: "1px solid #ce93d8",
+                  margin: "12px 16px",
+                  borderRadius: "10px",
+                  padding: "14px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                }}>
+                  <span style={{ fontSize: "28px" }}>🏁</span>
+                  <div>
+                    <p style={{ fontWeight: "700", fontSize: "14px", color: "#6a1b9a", margin: 0 }}>
+                      Trip has ended
+                    </p>
+                    <p style={{ fontSize: "12px", color: "#888", marginTop: "4px" }}>
+                      {bus.currentStop
+                        ? `Bus completed route at ${bus.currentStop}`
+                        : "Driver has ended this trip"}
+                      {bus.lastUpdated && ` · ${mins === 0 ? "just now" : `${mins} min ago`}`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate(-1)}
+                    style={{
+                      marginLeft: "auto", padding: "8px 14px",
+                      background: "#6a1b9a", color: "#fff",
+                      border: "none", borderRadius: "8px",
+                      fontSize: "13px", fontWeight: "700", cursor: "pointer",
+                      flexShrink: 0,
+                    }}>
+                    ← Back
+                  </button>
+                </div>
+              )}
 
               {/* Stops timeline */}
               {stops.length === 0 ? (
