@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle -->
+  <rect width="512" height="512" rx="96" fill="#1565c0"/>
+  <!-- Bus body -->
+  <rect x="80" y="160" width="352" height="220" rx="32" fill="#ffffff"/>
+  <!-- Bus roof -->
+  <rect x="100" y="120" width="312" height="60" rx="20" fill="#e3f2fd"/>
+  <!-- Windows row -->
+  <rect x="110" y="175" width="70" height="55" rx="8" fill="#1565c0"/>
+  <rect x="200" y="175" width="70" height="55" rx="8" fill="#1565c0"/>
+  <rect x="290" y="175" width="70" height="55" rx="8" fill="#1565c0"/>
+  <rect x="380" y="175" width="40" height="55" rx="8" fill="#1565c0"/>
+  <!-- Door -->
+  <rect x="110" y="250" width="60" height="80" rx="6" fill="#1565c0"/>
+  <!-- Wheels -->
+  <circle cx="160" cy="395" r="45" fill="#263238"/>
+  <circle cx="160" cy="395" r="22" fill="#546e7a"/>
+  <circle cx="352" cy="395" r="45" fill="#263238"/>
+  <circle cx="352" cy="395" r="22" fill="#546e7a"/>
+  <!-- Front lights -->
+  <rect x="82" y="290" width="30" height="18" rx="4" fill="#ffeb3b"/>
+  <!-- Destination board -->
+  <rect x="120" y="128" width="200" height="30" rx="4" fill="#1565c0"/>
+  <text x="220" y="149" font-family="Arial" font-size="18" fill="#ffffff" text-anchor="middle">MY BUS</text>
+  <!-- Live dot -->
+  <circle cx="420" cy="130" r="22" fill="#4caf50"/>
+  <circle cx="420" cy="130" r="11" fill="#ffffff"/>
+</svg>

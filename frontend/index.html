@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA essentials -->
+    <meta name="theme-color" content="#1565c0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MyBus" />
+
+    <!-- SEO / share -->
+    <meta name="description" content="Real-time college bus tracking — live location, ETA, route timeline" />
+    <meta name="application-name" content="Where Is My Bus" />
+
+    <!-- Open Graph (WhatsApp / social share preview) -->
+    <meta property="og:title" content="Where Is My Bus 🚌" />
+    <meta property="og:description" content="Track your college bus live. Know exactly where it is, right now." />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons/icon-512.png" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
+
+    <!-- iOS splash / safe area -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <style>
+      /* Safe area insets for notch phones */
+      body {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+    </style>
+
+    <title>Where Is My Bus 🚌</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
